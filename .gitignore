@@ -41,3 +41,13 @@ zhibei_backend/logs/
 
 # Compressed files
 *.zip
+
+# Deployment tools (not needed on Render)
+cpolar-installer/
+nssm/
+start_cpolar_tunnel.bat
+extract_bounds.py
+extract_data.py
+
+# Compiled Python
+*.pyc
