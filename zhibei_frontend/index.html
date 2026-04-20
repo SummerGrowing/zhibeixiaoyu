@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智备小语 · 小学语文AI备课</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div class="container" id="appContainer">
+        <!-- 开始页面 -->
+        <div class="landing-page" id="landingPage">
+            <div class="landing-top-links">
+                <a id="guideLink">使用指南</a>
+                <a href="#">建议反馈</a>
+            </div>
+            <div class="landing-brand">SMARTPROMPTS · SMARTER TEACHING</div>
+            <h1 class="landing-title">智备小语</h1>
+            <div class="landing-sub">五维知识 · 提示工程 · 轻松备课</div>
+            <button class="landing-btn" id="startBtn">开始备课</button>
+        </div>
+
+        <!-- 使用指南页面 -->
+        <div class="guide-page hidden" id="guidePage">
+            <div class="guide-header">
+                <h2>智备小语 · 使用指南</h2>
+                <button class="back-to-home-btn" id="backFromGuideBtn">返回首页</button>
+            </div>
+            <div class="guide-content">
+                <p>欢迎使用"智备小语"——一款专为小学语文教师设计的AI备课辅助工具。本系统基于"文本、文体、学情、教学法、AI机制"五维知识框架，内置统编版一至六年级上下册全部课文数据，帮助您快速生成专业的教学提示语及完整的教学设计片段，让备课更轻松、更高效。</p>
+
+                <h3>一、开始页面</h3>
+                <p>打开网页，首先看到的是开始页面：</p>
+                <ul>
+                    <li>顶部有 "使用指南" 和 "建议反馈" 链接。</li>
+                    <li>中央显示品牌标语 "五维知识 · 提示工程 · 轻松备课"。</li>
+                    <li>点击 "开始备课" 按钮，进入主备课界面。</li>
+                </ul>
+
+                <h3>二、选择AI模型</h3>
+                <p>系统支持多种AI大模型来生成提示语和教学片段。在主界面顶部的模型选择区域，您可以：</p>
+                <ol>
+                    <li><strong>选择AI服务商</strong>：支持 OpenAI、通义千问、DeepSeek 三种服务，可随时切换。</li>
+                    <li><strong>选择模型</strong>：服务商不同，可选模型也不同（如 gpt-4o、qwen-max、deepseek-chat 等）。</li>
+                </ol>
+                <blockquote>
+                    <p><strong>不选模型也能使用</strong>：如果不选择AI模型，系统会使用本地模板生成基础提示语框架，但内容质量不如AI生成。建议至少选择一个AI模型以获得最佳体验。</p>
+                </blockquote>
+
+                <h3>三、主备课界面</h3>
+                <p>主界面由顶部按钮栏、模型选择区和三个核心卡片组成。</p>
+                <p><strong>顶部按钮栏：</strong></p>
+                <ul>
+                    <li>"← 返回首页" 按钮：回到开始页面。</li>
+                    <li>右侧显示AI模型选择区域。</li>
+                </ul>
+                <p><strong>三个核心卡片：</strong></p>
+                <ol>
+                    <li><strong>学段·单元·课文</strong>
+                        <ul>
+                            <li><strong>年级</strong>：下拉选择（一年级上册～六年级下册，共12个选项），默认四年级上册。选择年级后，单元和课文会自动级联更新。</li>
+                            <li><strong>单元</strong>：下拉选择对应学期的单元。</li>
+                            <li><strong>课文</strong>：下拉选择对应单元的具体课文。选择课文后，右侧"教学侧重"卡片会自动更新。</li>
+                        </ul>
+                    </li>
+                    <li><strong>教学侧重</strong>
+                        <ul>
+                            <li>分为四个版块，可多选，已勾选项为本课核心推荐。</li>
+                            <li><strong>单元重点</strong>：根据年级和单元自动生成并勾选。</li>
+                            <li><strong>基础能力</strong>：品读语言、朗读感悟、识字写字、写作顺序、修辞手法、小练笔设计。</li>
+                            <li><strong>一课一得</strong>：根据课文类型自动生成推荐选项。</li>
+                            <li><strong>补充侧重</strong>：可在文本框中补充自定义侧重，也可从词库选择。</li>
+                        </ul>
+                    </li>
+                    <li><strong>您的教学想法</strong>
+                        <ul>
+                            <li>输入您对本课教学的初步想法（选填）。</li>
+                            <li>您的设想会融入生成的提示语中。</li>
+                        </ul>
+                    </li>
+                </ol>
+                <p>填写完毕后，点击底部 "生成提示语" 按钮。</p>
+
+                <h3>四、提示语面板</h3>
+                <p>点击"生成提示语"后，左侧卡片收缩，右侧滑出提示语面板。可编辑修改、一键复制、或点击"生成教学片段"。</p>
+
+                <h3>五、教学片段页面</h3>
+                <p>点击"生成教学片段"后，AI将基于当前提示语生成完整的教学设计片段。支持编辑、复制功能。</p>
+
+                <h3>六、常见问题</h3>
+                <blockquote>
+                    <p><strong>Q：不选AI模型也能用吗？</strong><br>
+                    A：可以。未选择模型时，系统会使用本地模板生成基础内容。选择AI模型后可获得更专业、更有针对性的生成结果。</p>
+                    <p><strong>Q：为什么生成失败？</strong><br>
+                    A：请检查：1）网络是否正常；2）AI模型服务是否可用。系统会自动回退到本地模板。</p>
+                    <p><strong>Q：不同AI服务商有什么区别？</strong><br>
+                    A：OpenAI（gpt-4o系列）生成质量稳定；通义千问（qwen系列）中文理解能力强；DeepSeek性价比高。建议都尝试一下，选择最适合您需求的服务。</p>
+                </blockquote>
+            </div>
+        </div>
+
+        <!-- 操作步骤提示模态框 -->
+        <div class="steps-modal-overlay hidden" id="stepsModal">
+            <div class="steps-modal-card">
+                <div class="steps-modal-header">
+                    <h3>✨ 轻松备课 · 三步走 ✨</h3>
+                </div>
+                <div class="steps-modal-body">
+                    <div class="steps-modal-item">
+                        <div class="steps-modal-number">1</div>
+                        <div class="steps-modal-text">
+                            <strong>选定课文 & 教学侧重</strong>
+                            <div class="steps-modal-desc">选择年级·单元·课文，勾选「单元重点」「基础能力」「一课一得」或自定义补充侧重。</div>
+                        </div>
+                    </div>
+                    <div class="steps-modal-item">
+                        <div class="steps-modal-number">2</div>
+                        <div class="steps-modal-text">
+                            <strong>填写教学想法（选填）</strong>
+                            <div class="steps-modal-desc">写下您的个性化教学构思，例如："重点引导学生从视觉和听觉想象潮水画面"。</div>
+                        </div>
+                    </div>
+                    <div class="steps-modal-item">
+                        <div class="steps-modal-number">3</div>
+                        <div class="steps-modal-text">
+                            <strong>生成提示语 → 产出教学设计</strong>
+                            <div class="steps-modal-desc">点击「生成专业提示语」获取专业指令，再点击「生成完整的教学设计」一键获取完整教案，支持复制、编辑。</div>
+                        </div>
+                    </div>
+                    <div class="steps-modal-item steps-modal-tip">
+                        <div class="steps-modal-number">💡</div>
+                        <div class="steps-modal-text">
+                            <strong>小提示</strong>
+                            <div class="steps-modal-desc">
+                            您可使用已接入的通用 AI 模型（当前已配置 DeepSeek-V3.2），也可选用我们正在训练的专用模型（完整版即将上线，敬请关注）。未配置 AI 模型时，系统将自动启用本地模板作为兜底方案。                   
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="steps-modal-footer">
+                    <button class="steps-modal-btn" id="confirmStartBtn">开始备课</button>
+                    <button class="steps-modal-btn steps-modal-btn-outline" id="closeStepsBtn">稍后</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主界面 -->
+        <div class="main-interface hidden" id="mainInterface">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="btn-outline" id="homeFromMainBtn">← 返回首页</button>
+                </div>
+                <div class="provider-selector" id="providerSelector">
+                    <select id="providerSelect"><option value="">本地模板</option></select>
+                    <select id="modelSelect"><option value="">选择模型</option></select>
+                </div>
+            </div>
+
+            <div class="title-wrapper">
+                <h1 class="main-title">智备小语</h1>
+                <div class="sub-head">———— 备课不难 好课简单 ————</div>
+            </div>
+
+            <div class="layout-area" id="layoutArea">
+                <div class="cards-row" id="cardsRow">
+                    <!-- 卡片1: 学段·单元·课文 -->
+                    <div class="card" id="card1" data-summary="">
+                        <div class="card-title">学段·单元·课文</div>
+                        <div class="vertical-field">
+                            <div class="field-label">年级</div>
+                            <select class="field-select" id="gradeSelect"></select>
+                        </div>
+                        <div class="vertical-field">
+                            <div class="field-label">单元</div>
+                            <select class="field-select" id="unitSelect"></select>
+                        </div>
+                        <div class="vertical-field">
+                            <div class="field-label">课文</div>
+                            <select class="field-select" id="titleSelect"></select>
+                        </div>
+                        <div class="card-summary" style="display: none;"></div>
+                    </div>
+
+                    <!-- 卡片2: 教学侧重 -->
+                    <div class="card" id="card2" data-summary="">
+                        <div class="card-title">教学侧重</div>
+
+                        <div class="focus-section" id="unitFocusSection" style="display:none;">
+                            <div class="focus-section-title">单元重点</div>
+                            <div id="unitFocusGroup"></div>
+                        </div>
+
+                        <div class="focus-section">
+                            <div class="focus-section-title">基础能力</div>
+                            <div class="focus-basic-grid" id="basicOptionsGrid">
+                                <label class="checkbox-item"><input type="checkbox" value="品读语言"><span>品读语言</span></label>
+                                <label class="checkbox-item"><input type="checkbox" value="朗读感悟"><span>朗读感悟</span></label>
+                                <label class="checkbox-item"><input type="checkbox" value="识字写字" id="literacyCheckbox"><span>识字写字</span></label>
+                                <label class="checkbox-item"><input type="checkbox" value="写作顺序"><span>写作顺序</span></label>
+                                <label class="checkbox-item"><input type="checkbox" value="修辞手法"><span>修辞手法</span></label>
+                                <label class="checkbox-item"><input type="checkbox" value="小练笔设计"><span>小练笔设计</span></label>
+                            </div>
+                        </div>
+
+                        <div class="focus-section">
+                            <div class="focus-section-title">一课一得</div>
+                            <div id="focusCheckboxGrid"></div>
+                            <div class="key-words-row" id="keyWordsRow" style="display:none;">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" id="keyWordsCheckbox">
+                                    <span id="keyWordsLabel">重点字词：</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="other-focus">
+                            <label>＋ 补充其他侧重</label>
+                            <textarea id="otherFocus" placeholder="输入自定义教学侧重，多个用逗号隔开"></textarea>
+                            <a href="javascript:void(0)" class="keyword-library-link" id="keywordLibraryLink">从词库选择</a>
+                        </div>
+
+                        <div class="hint-text">可多选，已勾选项为本课核心推荐。</div>
+                        <div class="compact-focus-view" id="compactFocusView"></div>
+                        <div class="card-summary" style="display: none;"></div>
+                    </div>
+
+                    <!-- 词库浮层 -->
+                    <div class="keyword-library-modal" id="keywordLibraryModal">
+                        <div class="keyword-library-content">
+                            <div class="keyword-library-header">
+                                <span>选择常用教学侧重</span>
+                                <button class="keyword-library-close" id="keywordLibraryClose">&times;</button>
+                            </div>
+                            <div class="keyword-library-body" id="keywordLibraryBody"></div>
+                            <div class="keyword-library-footer">
+                                <button class="btn-solid" id="confirmKeywordBtn">确定</button>
+                                <button class="btn-outline" id="clearOtherFocusBtn">清空输入框</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 卡片3: 您的教学想法 -->
+                    <div class="card" id="card3" data-summary="">
+                        <div class="card-title">您的教学想法</div>
+                        <textarea class="textarea-field" id="ideaText" placeholder="例如：重点引导学生从视觉和听觉两个角度想象画面，再尝试用一段话写写自己印象最深的部分。"></textarea>
+                        <div class="hint-text">输入您的教学构想，我们帮您落地</div>
+                        <div class="compact-idea-view" id="compactIdeaView"></div>
+                        <div class="card-summary" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- 右侧面板 -->
+                <div class="right-panel" id="rightPanel">
+                    <div class="panel-header">
+                        <h2>优化您给AI的提示语 <span class="stream-status" id="promptStreamStatus"></span></h2>
+                    </div>
+                    <textarea class="editable-prompt" id="editablePrompt" readonly placeholder="点击「生成专业提示语」按钮，AI将为您自动生成专业提示语..."></textarea>
+                    <div class="right-panel-buttons">
+                        <button class="btn-outline" id="reselectFocusBtn">返回选择</button>
+                        <div class="right-panel-buttons-right">
+                            <button class="btn-outline" id="editPromptBtn">编辑</button>
+                            <button class="btn-outline" id="copyPromptBtn">一键复制</button>
+                            <button class="btn-solid" id="generateFragmentBtn">生成完整的教学设计</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teaching-panel hidden" id="teachingPanel">
+                <h2 class="teaching-panel-title">教学设计 <span class="stream-status" id="fragmentStreamStatus"></span></h2>
+                <div class="teaching-content" id="teachingContent" contenteditable="false">点击"生成完整的教学设计"按钮，AI将为您生成完整的教学设计。</div>
+                    <div class="teaching-footer">
+                        <div class="left-group">
+                            <button class="btn-outline return-btn" id="returnFromTeachingBtn">← 返回优化提示语</button>
+                        </div>
+                    <button class="btn-solid" id="copyTeachingBtn">一键复制</button>
+                    <button class="btn-outline" id="editTeachingBtn">编辑</button>
+                </div>
+                <div class="teaching-footer hidden" id="teachingEditFooter">
+                    <div class="left-group">
+                        <button class="btn-outline" id="cancelTeachingEditBtn">取消</button>
+                    </div>
+                    <button class="btn-solid" id="saveTeachingBtn">保存</button>
+                </div>
+            </div>
+
+            <div class="action-bar" id="bottomGenerateBtn">
+                <button class="btn-generate-prompt" id="generatePromptBtn">生成专业提示语</button>
+            </div>
+        </div>
+
+
+        <div class="toast" id="toast">复制成功！</div>
+        <div class="save-toast" id="saveToast">已保存</div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/curriculum.js"></script>
+    <script src="js/focus.js"></script>
+    <script src="js/keyword-library.js"></script>
+    <script src="js/compact-mode.js"></script>
+    <script src="js/teaching-page.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

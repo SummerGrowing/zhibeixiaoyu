@@ -1,0 +1,322 @@
+from services.prompt_builder import (
+    get_text_type_focus, get_text_type_methods, get_grade_profile,
+    get_phase, get_phase_number, _get_recommended_dimensions
+)
+
+
+# === Template data maps (kept for local fallback) ===
+
+INTRO_MAP = {
+    '散文': {'teacher': '出示与{lessonName}相关的图片或视频，谈话导入："同学们，今天我们学习一篇优美的{textType}——{lessonName}。"', 'student': '观察画面，联系生活经验，说说看到了什么、想到了什么', 'intent': '创设情境，激发阅读兴趣，为品味语言做铺垫'},
+    '古诗': {'teacher': '背诵已学古诗引入，简介诗人和写作背景，引出课题{lessonName}。', 'student': '回忆已学古诗，认真倾听诗人背景介绍', 'intent': '以旧引新，知人论世，为理解诗意做铺垫'},
+    '记叙文': {'teacher': '出示课题{lessonName}，引导学生质疑："读了课题，你想知道什么？"', 'student': '齐读课题，提出自己想了解的问题', 'intent': '激发好奇心，培养质疑能力，明确学习目标'},
+    '说明文': {'teacher': '出示与{lessonName}相关的实物、图片或视频，提问引出课题。', 'student': '观察实物或图片，思考并回答问题', 'intent': '从直观入手，激发探究兴趣，引入说明对象'},
+    '寓言': {'teacher': '通过简短的故事或谜语导入，引出{lessonName}这个故事。', 'student': '认真听故事/猜谜语，思考其中蕴含的道理', 'intent': '故事导入激发兴趣，初步感知寓言特点'},
+    '童话': {'teacher': '出示童话插图或关键角色图片，创设情境引出{lessonName}。', 'student': '观察插图，猜测故事内容，进入童话情境', 'intent': '创设童话情境，激发想象力和阅读欲望'},
+    '文言文': {'teacher': '简介作者和时代背景，引出课文{lessonName}。', 'student': '认真倾听背景介绍，对文言文产生初步印象', 'intent': '知人论世，了解写作背景，降低文言文阅读畏惧感'},
+    '现代诗': {'teacher': '配乐朗读一首与{lessonName}主题相关的诗歌，引出新课。', 'student': '倾听诗歌朗诵，感受诗歌的节奏和情感', 'intent': '以诗引诗，创设诗歌学习氛围'},
+    '神话': {'teacher': '讲述{lessonName}的故事片段（保留悬念），引出课题。', 'student': '认真倾听故事，对神话情节产生好奇', 'intent': '悬念导入，激发对神话故事的探究欲望'},
+    '小说': {'teacher': '出示小说中的关键插图或设置悬念，引出{lessonName}。', 'student': '观察插图，猜测情节发展，进入阅读期待', 'intent': '悬念导入，激发对小说情节的好奇心'},
+    '拼音': {'teacher': '创设生活情境（如购物、问路、打招呼），引出今天要学的拼音。', 'student': '在情境中感受拼音的用处，产生学习兴趣', 'intent': '情境导入，让学生感受拼音与生活的联系'},
+    '识字': {'teacher': '出示生字卡或字理图，引导学生观察字形，激发识字兴趣。', 'student': '观察字形，说说自己认识的字，产生学习期待', 'intent': '字理导入，激发学生主动识字的愿望'},
+}
+
+READING_MAP = {
+    '古诗': {'teacher': '教师范读古诗，注意节奏和韵律；引导学生借助注释自由朗读。', 'student': '认真听教师范读，划出节奏停顿；借助注释自由朗读古诗', 'intent': '正确、流利、有感情地朗读古诗，初步感知诗意'},
+    '拼音': {'teacher': '教师示范发音，讲解发音要领；引导学生观察口型并模仿。', 'student': '观察教师口型，认真模仿发音；跟读、开火车拼读', 'intent': '掌握正确的发音方法，能准确拼读'},
+    '识字': {'teacher': '引导学生借助拼音自由读课文，圈画本课生字。', 'student': '借助拼音自由朗读，圈出不认识的生字；同桌互学生字', 'intent': '自主识字，培养借助拼音识字的能力'},
+    '文言文': {'teacher': '教师范读，标注节奏停顿；引导学生借助注释和插图自由朗读。', 'student': '听教师范读，注意节奏停顿；借助注释和插图尝试朗读', 'intent': '读准字音，读好停顿，初步理解文意'},
+}
+
+DEFAULT_READING = {'teacher': '引导学生自由朗读课文，要求读准字音、读通句子；思考：课文主要写了什么？', 'student': '自由朗读课文，圈画生字新词；思考课文主要内容', 'intent': '正确、流利地朗读课文，整体感知课文内容'}
+
+DEEP_READ_MAP = {
+    '散文': [
+        {'focus': '品读语言', 'cond': True, 'teacher': '引导学生找出最喜欢的段落或句子，说说喜欢的理由。', 'student': '默读课文，圈画优美语句；在小组内分享自己喜欢的句子及理由', 'intent': '品味精美语言，感受表达之美'},
+        {'focus': '观察方法', 'teacher': '引导学生发现课文是按什么顺序描写的（时间顺序/空间顺序/游览顺序），画出表示顺序的关键词。', 'student': '梳理文章写作顺序，画出关键词；交流自己的发现', 'intent': '学习作者的观察方法和写作顺序'},
+        {'focus': '修辞手法', 'teacher': '找出文中的比喻句、拟人句等修辞手法，引导学生体会其表达效果。', 'student': '找出修辞手法，交流体会；尝试仿说/仿写一个句子', 'intent': '品味修辞之妙，学习运用修辞'},
+        {'focus': '借景抒情', 'teacher': '引导学生体会作者借景物表达了怎样的情感，找出景物描写与情感表达的关联。', 'student': '朗读写景段落，体会景中之情；交流感受', 'intent': '感受借景抒情的表达方法，体会作者情感'},
+        {'focus': '情感体会', 'teacher': '引导学生朗读关键段落，体会作者表达的情感。', 'student': '有感情地朗读课文，说说自己读后的感受', 'intent': '在读中感悟，与作者产生情感共鸣'},
+        {'focus': '人物形象', 'teacher': '引导学生找出文中描写人物的关键语句，分析人物特点。', 'student': '划出描写人物的语句，批注人物特点；小组交流', 'intent': '通过品读人物描写，感受人物形象'},
+        {'focus': '信息提取', 'teacher': '引导学生快速阅读课文，提取关键信息，完成信息卡片。', 'student': '快速阅读，提取关键信息；填写信息卡片或表格', 'intent': '培养提取和整理信息的能力'},
+        {'focus': '说明方法', 'teacher': '引导学生找出文中使用的说明方法（列数字、举例子、打比方等），分析其作用。', 'student': '找出说明方法并标注名称；交流体会', 'intent': '了解文中说明方法及其表达效果'},
+        {'focus': '寓意理解', 'teacher': '引导学生体会文章蕴含的深层含义，联系生活实际说一说。', 'student': '小组讨论文章的深层含义；联系生活实际交流', 'intent': '理解文章的深层含义，学以致用'},
+    ],
+    '古诗': [
+        {'focus': '古诗赏析', 'cond': True, 'teacher': '引导学生逐句品读古诗，借助注释和插图理解诗意，想象画面。', 'student': '借助注释理解诗意，想象古诗描绘的画面；在小组内交流', 'intent': '理解诗意，感受古诗的意境美'},
+        {'focus': '想象画面', 'teacher': '引导学生闭上眼睛，听着朗诵，想象古诗描绘的画面，用自己的话描述。', 'student': '闭眼聆听，在脑海中构建画面；用自己的语言描述所想到的画面', 'intent': '展开想象，深入体会古诗意境'},
+        {'focus': '品读语言', 'teacher': '引导学生品味古诗中的"诗眼"（关键字词），体会炼字之妙。', 'student': '找出认为最妙的字词，说说好在哪里', 'intent': '品味关键字词，感受古诗语言之美'},
+        {'focus': '朗读感悟', 'teacher': '指导学生有感情地朗读古诗，注意节奏和韵律；尝试背诵。', 'student': '练习有感情地朗读古诗；尝试背诵', 'intent': '通过朗读感悟诗意，积累古诗'},
+    ],
+    '记叙文': [
+        {'focus': '情节分析', 'cond': True, 'teacher': '引导学生梳理文章的叙事脉络（起因→经过→结果），概括主要内容。', 'student': '默读课文，梳理故事情节；用简洁的语言概括主要内容', 'intent': '理清文章脉络，整体把握叙事结构'},
+        {'focus': '写作顺序', 'teacher': '引导学生发现文章的写作顺序（时间顺序/事情发展顺序），画出相关词句。', 'student': '找出表示时间或事情发展的关键词，梳理写作顺序', 'intent': '学习叙事类文章的写作顺序'},
+        {'focus': '人物形象', 'teacher': '引导学生找出描写人物的关键语句（语言、动作、神态、心理），分析人物特点。', 'student': '划出描写人物的语句，在旁边批注人物特点；小组交流', 'intent': '通过品读人物描写，感受人物形象'},
+        {'focus': '情感体会', 'teacher': '引导学生体会文章表达的思想感情，联系生活实际谈谈感受。', 'student': '有感情地朗读关键段落，说说自己受到的启发', 'intent': '在读中感悟，体会文章的思想感情'},
+        {'focus': '寓意理解', 'teacher': '引导学生思考文章蕴含的道理，联系生活实际说一说。', 'student': '小组讨论文章蕴含的道理；联系生活实际举出类似的例子', 'intent': '理解文章深层含义，联系生活学以致用'},
+        {'focus': '信息提取', 'teacher': '引导学生快速阅读课文，提取关键信息，完成信息整理。', 'student': '快速阅读，提取关键信息；完成信息卡片或表格', 'intent': '培养提取和整理信息的能力'},
+    ],
+    '说明文': [
+        {'focus': '说明方法', 'cond': True, 'teacher': '引导学生找出文中使用的说明方法（列数字、举例子、打比方、作比较等），分析其作用。', 'student': '找出说明方法，画出来并在旁边标注说明方法的名称；交流体会', 'intent': '掌握常见的说明方法及其表达效果'},
+        {'focus': '信息提取', 'teacher': '引导学生提取课文中的关键信息，完成信息卡片或表格。', 'student': '快速阅读课文，提取关键信息；填写信息卡片或表格', 'intent': '培养提取和整理信息的能力'},
+        {'focus': '写作顺序', 'teacher': '引导学生梳理文章的逻辑顺序（总分/时间/空间/并列），概括各段要点。', 'student': '划分段落层次，概括各段要点；梳理文章结构', 'intent': '了解说明文的常见结构方式'},
+        {'focus': '品读语言', 'teacher': '引导学生体会说明文语言的准确性（如"大约""一般"等词语），感受准确表达的重要性。', 'student': '找出体现语言准确性的词语，说说去掉后意思的变化', 'intent': '体会说明文语言的准确性和严谨性'},
+        {'focus': '观察方法', 'teacher': '引导学生发现作者是如何观察说明对象的，学习观察的角度和方法。', 'student': '梳理作者的观察角度，画出关键信息；交流发现', 'intent': '学习科学的观察方法和角度'},
+        {'focus': '情感体会', 'teacher': '引导学生体会文章表达的科学精神或人文关怀。', 'student': '朗读关键段落，说说读后的感受和启发', 'intent': '在读中感悟，体会科学与人文精神'},
+        {'focus': '朗读感悟', 'teacher': '引导学生有感情地朗读课文，感受说明文语言的节奏和逻辑。', 'student': '自由朗读课文，注意语气的准确性；小组展示朗读', 'intent': '通过朗读感悟说明文的表达特点'},
+    ],
+    '寓言': [
+        {'focus': '情节分析', 'cond': True, 'teacher': '引导学生梳理故事的起因、经过、结果，了解故事发展。', 'student': '默读课文，梳理故事情节；用自己的话复述故事', 'intent': '理清故事脉络，培养复述能力'},
+        {'focus': '角色分析', 'teacher': '引导学生分析故事中各角色的特点，画出关键词。', 'student': '找出描写各角色的语句，批注角色特点', 'intent': '通过分析角色特点，理解寓言寓意'},
+        {'focus': '寓意理解', 'teacher': '引导学生讨论故事蕴含的道理，联系生活实际说一说。', 'student': '小组讨论故事的寓意；联系生活实际举出类似的例子', 'intent': '理解寓言的深层含义，联系生活学以致用'},
+    ],
+    '童话': [
+        {'focus': '情节分析', 'cond': True, 'teacher': '引导学生梳理童话的故事情节，了解故事的起因、经过、结果。', 'student': '默读课文，梳理故事发展脉络；用自己的话讲述故事', 'intent': '理清故事情节，培养概括和讲述能力'},
+        {'focus': '角色分析', 'teacher': '引导学生分析童话中各角色的特点（语言、动作、心理），体会角色形象。', 'student': '划出描写角色的语句，在旁边批注角色特点', 'intent': '通过分析角色，感受童话人物的形象美'},
+        {'focus': '想象画面', 'teacher': '引导学生想象童话中的奇妙场景，用自己的话描述。', 'student': '闭上眼睛想象童话画面；用自己的语言描述想象到的画面', 'intent': '发挥想象力，感受童话的奇妙世界'},
+        {'focus': '寓意理解', 'teacher': '引导学生讨论童话想要告诉我们的道理。', 'student': '小组讨论童话蕴含的道理；全班交流分享', 'intent': '理解童话的寓意，获得人生启示'},
+        {'focus': '情感体会', 'teacher': '引导学生体会童话中蕴含的情感，说说最打动自己的地方。', 'student': '有感情地朗读关键段落，交流读后的感受', 'intent': '在读中感悟，与童话人物产生情感共鸣'},
+        {'focus': '人物形象', 'teacher': '引导学生找出描写童话人物的关键语句，分析人物特点。', 'student': '划出描写人物的语句，批注人物特点；小组交流', 'intent': '通过品读人物描写，感受童话人物形象'},
+    ],
+    '文言文': [
+        {'focus': '文言文阅读', 'cond': True, 'teacher': '引导学生逐句翻译，借助注释和工具书疏通文意。', 'student': '借助注释尝试逐句翻译；标注不理解的地方，小组讨论', 'intent': '疏通文意，理解文言文的基本内容'},
+        {'focus': '品读语言', 'teacher': '引导学生品味文言文的精炼表达，积累文言词汇。', 'student': '找出精妙的字词，体会文言表达的简洁之美；积累常用文言词', 'intent': '感受文言文的语言特点，积累文言词汇'},
+        {'focus': '情感体会', 'teacher': '引导学生联系生活实际，理解文章蕴含的哲理。', 'student': '结合生活实际，谈谈从文中学到的道理', 'intent': '古为今用，从文言文中获得生活启示'},
+        {'focus': '朗读感悟', 'teacher': '指导学生多种形式朗读（齐读、分组读、配乐读），读出文言文的韵味。', 'student': '练习有节奏地朗读文言文；尝试背诵', 'intent': '在诵读中感受文言文的韵律美'},
+        {'focus': '人物形象', 'teacher': '引导学生找出描写人物言行的关键语句，分析人物特点。', 'student': '划出描写人物的语句，批注人物特点；小组交流', 'intent': '通过品读人物描写，感受文言文中的人物形象'},
+        {'focus': '想象画面', 'teacher': '引导学生结合注释和插图，想象文言文描绘的场景。', 'student': '借助注释和插图，在脑海中构建画面；用自己的话描述', 'intent': '借助想象，深入理解文言文的情境和内容'},
+        {'focus': '寓意理解', 'teacher': '引导学生联系生活实际，理解文章蕴含的深刻道理。', 'student': '小组讨论文章蕴含的道理；联系生活实际交流', 'intent': '理解文言文的深层含义，学以致用'},
+    ],
+    '现代诗': [
+        {'focus': '诗歌赏析', 'cond': True, 'teacher': '引导学生品读现代诗的意象和表达方式，感受诗歌的语言美和节奏美。', 'student': '找出诗歌中的关键意象，品味独特的表达方式；在小组内交流赏析感受', 'intent': '品读诗歌意象，感受现代诗的表达特色'},
+        {'focus': '朗读感悟', 'teacher': '指导学生有感情地朗读诗歌，感受节奏和韵律。', 'student': '自由朗读诗歌，标注重音和停顿；有感情地朗读', 'intent': '在朗读中感受现代诗的节奏美和韵律美'},
+        {'focus': '想象画面', 'teacher': '引导学生找出诗歌中的意象，想象画面，用自己的话描述。', 'student': '找出诗歌中描写的意象，想象画面并描述', 'intent': '通过想象画面，深入理解诗歌意境'},
+        {'focus': '情感体会', 'teacher': '引导学生体会诗歌表达的情感，说说读后的感受。', 'student': '有感情地朗读诗歌，交流读后的感受和联想', 'intent': '在读中感悟，与诗歌产生情感共鸣'},
+        {'focus': '品读语言', 'teacher': '引导学生品味诗歌中独特的表达方式，感受诗歌语言的魅力。', 'student': '找出诗歌中独特的表达，交流自己的理解和感受', 'intent': '品味诗歌语言，感受诗歌独特的表达方式'},
+        {'focus': '修辞手法', 'teacher': '引导学生找出诗歌中的修辞手法（比喻、拟人、排比等），体会其表达效果。', 'student': '找出修辞手法，交流体会；尝试仿写一句诗', 'intent': '品味修辞之妙，学习诗歌的表达技巧'},
+    ],
+    '神话': [
+        {'focus': '情节分析', 'cond': True, 'teacher': '引导学生梳理神话故事的主要情节，了解故事的发展脉络。', 'student': '默读课文，梳理故事的主要情节；用自己的话讲述故事', 'intent': '理清故事脉络，培养讲述神话故事的能力'},
+        {'focus': '想象画面', 'teacher': '引导学生想象神话中的神奇场景，感受神话的想象力。', 'student': '闭眼想象神话中的画面，用自己的话描述', 'intent': '感受神话的神奇想象，培养想象力'},
+        {'focus': '人物形象', 'teacher': '引导学生分析神话中人物的精神品质，画出关键语句。', 'student': '找出描写人物的语句，批注人物的精神品质', 'intent': '感受神话人物的精神力量，受到精神熏陶'},
+        {'focus': '情感体会', 'teacher': '引导学生体会神话人物的精神品质，说说自己受到的启发。', 'student': '有感情地朗读关键段落，交流读后的感受和启发', 'intent': '在读中感悟，从神话中获得精神力量'},
+    ],
+    '小说': [
+        {'focus': '情节分析', 'cond': True, 'teacher': '引导学生梳理小说的故事情节（开端→发展→高潮→结局）。', 'student': '默读课文，划分情节层次；概括各部分的主要内容', 'intent': '理清小说情节结构，把握叙事脉络'},
+        {'focus': '人物形象', 'teacher': '引导学生找出描写人物语言、动作、神态、心理的关键语句，分析人物形象。', 'student': '划出描写人物的语句，批注人物特点；小组讨论交流', 'intent': '通过品读人物描写，深入理解人物形象'},
+        {'focus': '情感体会', 'teacher': '引导学生体会小说表达的思想感情，联系生活实际谈谈感受。', 'student': '有感情地朗读关键段落，交流读后的感受和启发', 'intent': '在读中感悟，体会小说的思想内涵'},
+        {'focus': '修辞手法', 'teacher': '引导学生找出小说中的修辞手法，体会其表达效果。', 'student': '找出修辞手法，交流体会；分析其在塑造人物或渲染氛围中的作用', 'intent': '品味修辞之妙，理解其服务于小说表达的功能'},
+        {'focus': '想象画面', 'teacher': '引导学生想象小说中的场景和画面，加深对情节的理解。', 'student': '闭眼想象小说中的关键场景；用自己的话描述', 'intent': '通过想象画面，深入理解小说的情境和氛围'},
+    ],
+    '拼音': [
+        {'focus': '识字写字', 'cond': True, 'teacher': '重点指导声母/韵母的发音方法，利用口诀帮助学生记忆。', 'student': '认真观察口型，跟读模仿；利用口诀记忆发音', 'intent': '准确掌握拼音的发音方法'},
+        {'focus': '朗读感悟', 'teacher': '出示含有本课拼音的词语和短句，引导学生拼读练习。', 'student': '练习拼读词语和短句；开火车读、小组赛读', 'intent': '在语境中练习拼读，巩固拼音学习'},
+    ],
+    '识字': [
+        {'focus': '识字写字', 'cond': True, 'teacher': '字理识字：讲解生字的偏旁部首和字源，帮助学生理解字义。', 'student': '观察字形，了解偏旁部首的含义；在田字格中描红、临写', 'intent': '通过字理识字，感受汉字文化内涵'},
+        {'focus': '品读语言', 'teacher': '引导学生回到课文中，在具体的语境中巩固识字。', 'student': '在课文语境中认读生字；用生字组词造句', 'intent': '在语境中巩固识字，学以致用'},
+        {'focus': '情感体会', 'teacher': '引导学生朗读课文，体会课文表达的情感。', 'student': '有感情地朗读课文，说说自己读后的感受', 'intent': '在读中感悟，与课文产生情感共鸣'},
+        {'focus': '信息提取', 'teacher': '引导学生从课文中提取关键信息，完成简单的信息整理。', 'student': '快速阅读课文，找出关键信息；完成信息卡片', 'intent': '培养提取和整理信息的能力'},
+    ],
+}
+
+WRITE_MAP = {
+    '散文': {'teacher': '引导学生仿照课文的写法，以相关主题写一段话。提供开头支架和关键词提示。', 'student': '根据教师提供的支架，模仿课文的表达方式进行练笔', 'intent': '读写结合，学习课文的表达方法'},
+    '古诗': {'teacher': '引导学生展开想象，把古诗改写成一个小故事或散文片段。', 'student': '展开想象，把古诗的意境改写成故事或散文', 'intent': '古诗改写，加深对古诗意境的理解'},
+    '记叙文': {'teacher': '引导学生模仿课文中的人物描写方法（动作、语言、神态），写一个人物片段。', 'student': '回忆生活中的一个人物，运用课文学到的方法进行描写', 'intent': '学习人物描写方法，读写迁移'},
+    '说明文': {'teacher': '引导学生用学到的说明方法（列数字、举例子、打比方等），介绍一种喜欢的事物。', 'student': '选择一种喜欢的事物，运用说明方法进行介绍', 'intent': '学以致用，练习运用说明方法'},
+    '寓言': {'teacher': '引导学生续编故事或改编结局，发挥想象力。', 'student': '发挥想象，续编寓言故事或改编结局', 'intent': '续编故事，培养想象力和创造力'},
+    '童话': {'teacher': '引导学生仿照童话的特点，创编一个小童话故事。', 'student': '发挥想象，创编一个童话故事', 'intent': '学习童话的表达方式，培养创造力'},
+    '文言文': {'teacher': '引导学生用自己的话改写这个文言文故事。', 'student': '用自己的话把文言文故事改写成白话文故事', 'intent': '加深对文言文的理解，练习改写能力'},
+    '现代诗': {'teacher': '引导学生仿照诗歌的表达方式，试写一首小诗。', 'student': '选择一个主题，仿照诗歌的表达方式试写小诗', 'intent': '学习现代诗的表达方式，尝试诗歌创作'},
+    '神话': {'teacher': '引导学生发挥想象，为神话故事补充一个细节或续写一个情节。', 'student': '展开想象，为神话故事补充细节或续写情节', 'intent': '发挥想象，感受神话创作的魅力'},
+    '小说': {'teacher': '引导学生模仿小说中的人物描写方法，写一个人物片段。', 'student': '选择一个人物，运用小说中学到的方法进行描写', 'intent': '学习小说的人物描写方法，读写迁移'},
+    '拼音': {'teacher': '引导学生用含有本课拼音的音节说一句话或编一个小儿歌。', 'student': '用本课学到的拼音音节说一句话或编小儿歌', 'intent': '在运用中巩固拼音学习'},
+    '识字': {'teacher': '引导学生用本课学到的生字各写一个句子，可以编一个小故事。', 'student': '用本课生字组词造句；尝试把几个生字连起来编小故事', 'intent': '在语境中巩固识字，培养语言表达能力'},
+}
+
+GENERAL_TRANSFER_MAP = {
+    '古诗': {'teacher': '指导学生背诵古诗，展示背诵成果。', 'student': '练习背诵古诗，在小组内展示背诵', 'intent': '积累古诗，培养语感和记忆力'},
+    '拼音': {'teacher': '组织拼音游戏活动（如拼音卡片游戏、拼读比赛），巩固学习成果。', 'student': '参与拼音游戏，在游戏中练习拼读', 'intent': '游戏化巩固拼音学习，激发兴趣'},
+    '识字': {'teacher': '组织识字游戏（如猜字谜、找朋友），巩固识字成果。', 'student': '参与识字游戏，在游戏中复习生字', 'intent': '游戏化巩固识字，提高学习兴趣'},
+}
+
+DEFAULT_GENERAL_TRANSFER = {'teacher': '引导学生回顾课文内容，联系生活实际说一说自己的收获和感悟。', 'student': '回顾课文，联系生活实际，在小组内交流自己的收获', 'intent': '回顾总结，联系生活，深化理解'}
+
+HOMEWORK_MAP = {
+    '古诗': '有感情地朗读并背诵古诗；尝试用自己的话把古诗改写成小故事。',
+    '拼音': '练习拼读本课学到的拼音；用拼音写一写今天学到的词语。',
+    '识字': '正确书写本课生字；用生字各组两个词语。',
+    '文言文': '熟读并背诵课文；用自己的话讲讲这个故事。',
+}
+
+DEFAULT_HOMEWORK = '有感情地朗读课文；完成练习册相关题目。'
+
+KEY_POINTS_MAP = {
+    '散文': ['写景/抒情', '品读语言', '修辞手法'],
+    '古诗': ['诗意理解', '想象画面', '古诗赏析'],
+    '记叙文': ['叙事脉络', '人物形象', '情感体会'],
+    '说明文': ['说明对象', '说明方法', '关键信息'],
+    '寓言': ['故事情节', '角色特点', '寓意'],
+    '童话': ['故事情节', '角色特点', '蕴含道理'],
+    '文言文': ['文意理解', '字词积累', '蕴含哲理'],
+    '现代诗': ['诗歌意象', '朗读感悟', '情感表达'],
+    '神话': ['故事情节', '人物精神', '文化价值'],
+    '小说': ['故事情节', '人物形象', '主题思想'],
+    '拼音': ['声母/韵母', '拼读方法', '发音要领'],
+    '识字': ['生字新词', '字理溯源', '书写指导'],
+}
+
+
+def generate_local_fragment(grade, unit, lesson_name, text_type, focuses, other_focus, idea,
+                            unit_number=None, lesson_number=None):
+    """Local template-based fragment generation in lesson plan format."""
+    grade_level = get_grade_profile(grade)
+    methods = get_text_type_methods(text_type)
+    focus_desc = get_text_type_focus(text_type)
+    phase = get_phase(grade)
+    phase_number = get_phase_number(grade)
+    rec_dims = _get_recommended_dimensions(text_type)
+
+    if unit_number is None:
+        from services.prompt_builder import get_unit_number, get_lesson_number
+        unit_number = get_unit_number(unit)
+        lesson_number = get_lesson_number(grade, unit, lesson_name)
+
+    focus_str = '、'.join(focuses)
+    if other_focus:
+        focus_str += '、' + other_focus
+
+    lines = []
+
+    # Title
+    lines.append(f'《{lesson_name}》教学设计（本地模板生成）')
+    lines.append('')
+
+    # 一、目标确立依据
+    lines.append('一、目标确立依据')
+    lines.append(f'1. 课标依据：根据《义务教育语文课程标准（2022年版）》第{phase_number}学段要求，本课应引导学生{focus_desc}。')
+    lines.append(f'2. 教材分析：本课是{grade}{unit}第{lesson_number}课，课文为{text_type}文体。{focus_desc}。')
+    lines.append(f'3. 学情分析：{grade_level}')
+    lines.append('')
+
+    # 二、教学目标内容
+    lines.append('二、教学目标内容')
+    dim_names = '、'.join(d[0] for d in rec_dims)
+    lines.append(f'1. 本课时为{text_type}课，核心任务为【{focus_str}】，选择{dim_names}维度，侧重{focus_str}。')
+    lines.append('')
+    lines.append('| 维度 | 一般教学目标 | 具体学习结果（ABCD法） |')
+    lines.append('|------|-------------|----------------------|')
+    for dim, reason in rec_dims:
+        lines.append(f'| {dim} | 【{reason}】 | 在【条件】下，学生能【行为动词+内容】，达到【程度】。 |')
+    lines.append('')
+    lines.append('2. 输出要求')
+    lines.append('- 每个目标主语统一为"学生"')
+    lines.append('- 行为动词必须具体、可观察、可测量')
+    lines.append('- 必须包含行为条件、行为表现、表现程度三要素')
+    lines.append('- 先写一般教学目标（概括性），再写具体学习结果（可观测）')
+    lines.append('- 维度不要求四个齐全，根据课文类型灵活选择，优先保证核心目标的达成')
+    lines.append('')
+
+    # 三、课型
+    lines.append('三、课型：新授课')
+    lines.append('')
+
+    # 四、课时安排
+    lines.append('四、课时安排：1课时')
+    lines.append('')
+
+    # 五、教学重点、教学难点
+    lines.append(f'五、教学重点：{focus_str}')
+    key_points = KEY_POINTS_MAP.get(text_type, KEY_POINTS_MAP['散文'])
+    lines.append(f'教学难点：{key_points[-1]}的理解与运用')
+    lines.append('')
+
+    # 六、教学方法
+    lines.append(f'六、教学方法：{methods}')
+    lines.append('')
+
+    # 七、教学过程
+    lines.append('七、教学过程')
+    lines.append('')
+
+    # 导入环节
+    tpl = INTRO_MAP.get(text_type, INTRO_MAP['散文'])
+    teacher_text = tpl['teacher'].format(lessonName=lesson_name, textType=text_type)
+    if idea:
+        teacher_text += f'（结合教师设想：{idea}）'
+    lines.append('（一）导入')
+    lines.append(f'教师活动：{teacher_text}')
+    lines.append(f'学生活动：{tpl["student"]}')
+    lines.append(f'设计意图：{tpl["intent"]}')
+    lines.append('')
+
+    # 初读感知
+    lines.append('（二）初读感知')
+    reading_tpl = READING_MAP.get(text_type, DEFAULT_READING)
+    lines.append(f'教师活动：{reading_tpl["teacher"]}')
+    lines.append(f'学生活动：{reading_tpl["student"]}')
+    lines.append(f'设计意图：{reading_tpl["intent"]}')
+    if '识字写字' in focuses and text_type != '拼音':
+        lines.append('')
+        lines.append('字词学习环节：出示本课生字词，重点指导易错字的读音和字形；指导书写重点生字。学生认读生字词，交流识字方法；观察田字格中的范字，描红、临写。')
+    lines.append('')
+
+    # 精读品析
+    lines.append('（三）精读品析')
+    sections = DEEP_READ_MAP.get(text_type, DEEP_READ_MAP['散文'])
+    has_focus = lambda f: f in focuses
+    added = 0
+    for sec in sections:
+        if sec.get('cond') or has_focus(sec['focus']):
+            lines.append(f'教师活动：{sec["teacher"]}')
+            lines.append(f'学生活动：{sec["student"]}')
+            lines.append(f'设计意图：{sec["intent"]}')
+            lines.append('')
+            added += 1
+    if added == 0 and sections:
+        fallback = sections[0]
+        lines.append(f'教师活动：{fallback["teacher"]}')
+        lines.append(f'学生活动：{fallback["student"]}')
+        lines.append(f'设计意图：{fallback["intent"]}')
+        lines.append('')
+
+    # 读写迁移
+    lines.append('（四）读写迁移')
+    if has_focus('小练笔设计'):
+        transfer_tpl = WRITE_MAP.get(text_type, WRITE_MAP['散文'])
+    else:
+        transfer_tpl = GENERAL_TRANSFER_MAP.get(text_type, DEFAULT_GENERAL_TRANSFER)
+    lines.append(f'教师活动：{transfer_tpl["teacher"]}')
+    lines.append(f'学生活动：{transfer_tpl["student"]}')
+    lines.append(f'设计意图：{transfer_tpl["intent"]}')
+    lines.append('')
+
+    # 总结拓展
+    lines.append('（五）总结拓展')
+    lines.append('教师活动：引导学生总结本课的收获：学习了什么知识，掌握了什么方法。')
+    lines.append('学生活动：回顾本课内容，交流学习收获。')
+    lines.append('设计意图：回顾总结，梳理本课知识与方法。')
+    if '识字写字' in focuses and text_type != '拼音':
+        lines.append('')
+        lines.append('指导书写：指导学生书写本课要求会写的生字，强调笔顺和间架结构。学生观察范字，描红、临写，同桌互评。')
+    lines.append('')
+
+    # 八、作业布置
+    hw = HOMEWORK_MAP.get(text_type, DEFAULT_HOMEWORK)
+    lines.append(f'八、作业布置：{hw}')
+    lines.append('')
+
+    # 九、板书设计
+    lines.append('九、板书设计')
+    lines.append('')
+    points = list(KEY_POINTS_MAP.get(text_type, KEY_POINTS_MAP['散文']))
+    lines.append(f'  {lesson_name}')
+    for i, point in enumerate(points):
+        prefix = '  └── ' if i == len(points) - 1 else '  ├── '
+        lines.append(f'{prefix}{point}')
+    lines.append('')
+
+    lines.append('【提示：本教学设计由本地模板生成，内容为通用框架。配置API后可获得更专业、更有针对性的AI生成结果。】')
+
+    return '\n'.join(lines)
