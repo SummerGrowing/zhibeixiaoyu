@@ -1,4 +1,4 @@
-# Deploy v3
+# Deploy v5
 FROM python:3.9-slim
 
 WORKDIR /app
@@ -8,6 +8,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY zhibei_backend/ .
 
+RUN chmod +x start.sh
+
 EXPOSE 5000
 
-ENTRYPOINT ["python", "run_prod.py"]
+ENTRYPOINT ["/app/start.sh"]
