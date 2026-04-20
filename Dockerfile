@@ -1,4 +1,4 @@
-# Deploy v2
+# Deploy v3
 FROM python:3.9-slim
 
 WORKDIR /app
@@ -10,4 +10,4 @@ COPY zhibei_backend/ .
 
 EXPOSE 5000
 
-CMD ["python", "run_prod.py"]
+ENTRYPOINT ["python", "run_prod.py"]
