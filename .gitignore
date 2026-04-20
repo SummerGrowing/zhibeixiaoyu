@@ -48,6 +48,14 @@ nssm/
 start_cpolar_tunnel.bat
 extract_bounds.py
 extract_data.py
+build.sh
+start.sh
+start.bat
+railway.json
+render.yaml
+
+# Temporary scripts
+*.ps1
 
 # Compiled Python
 *.pyc
