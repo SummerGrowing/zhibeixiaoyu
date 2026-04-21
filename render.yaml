@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: zhibeixiaoyu
+    runtime: python
+    buildCommand: pip install -r zhibei_backend/requirements.txt
+    startCommand: cd zhibei_backend && python run_prod.py
+    envVars:
+      - key: RENDER
+        value: "true"
+      - key: DEFAULT_AI_PROVIDER
+        value: deepseek
+      - key: DEFAULT_AI_MODEL
+        value: deepseek-chat
+      - key: DEEPSEEK_API_KEY
+        sync: false

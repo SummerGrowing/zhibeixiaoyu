@@ -52,7 +52,6 @@ build.sh
 start.sh
 start.bat
 railway.json
-render.yaml
 
 # Temporary scripts
 *.ps1
